@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import { NavigationContainer, useNavigation,useLinkTo } from '@react-navigation/native';
+import { NavigationContainer, useLinkTo, useNavigation } from '@react-navigation/native';
 import i18n from 'i18n-js';
 import React from 'react';
 import { View } from 'react-native';
@@ -12,6 +12,7 @@ import getReducer from './getReducer';
 import getSaga from './getSaga';
 import createLoading from './loading';
 import prefixNamespace from './prefixNamespace';
+import { run as runSubscription } from './subscription';
 // eslint-disable-next-line import/no-mutable-exports
 let dispatch;
 
@@ -81,7 +82,6 @@ export function coreApp() {
       ...app._linking,
       ...linkingConfigure,
     };
-    console.log('linking-linking-84:', app._linking);
   }
 
   function start() {
@@ -119,6 +119,15 @@ export function coreApp() {
     // Run sagas
     sagas.forEach(sagaMiddleware.run);
 
+
+    // Run subscriptions
+    for (const m of app._models) {
+      reducers[m.namespace] = getReducer(m.reducers, m.state || null);
+      if (m.subscriptions) {
+        runSubscription(m.subscriptions, m, app, onError);
+      }
+    }
+
     dispatch = store.dispatch;
     const Router = app._router;
 
@@ -138,4 +147,4 @@ const trans = i18n.t;
 const navigate = (name, params) => {
   navigationRef.current?.navigate(name, params);
 };
-export { connect, dispatch, trans, navigate, useSelector, useNavigation,useLinkTo };
+export { connect, dispatch, trans, navigate, useSelector, useNavigation, useLinkTo };
